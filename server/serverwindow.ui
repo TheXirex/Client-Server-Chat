@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+  <class>ServerWindow</class>
+  <widget class="QMainWindow" name="ServerWindow">
+    <property name="geometry">
+      <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>400</width>
+        <height>300</height>
+      </rect>
+    </property>
+    <property name="windowTitle">
+      <string>Server</string>
+    </property>
+    <widget class="QWidget" name="centralwidget">
+      <widget class="QTextEdit" name="text_edit">
+        <property name="geometry">
+          <rect>
+            <x>10</x>
+            <y>10</y>
+            <width>380</width>
+            <height>200</height>
+          </rect>
+        </property>
+      </widget>
+      <widget class="QListWidget" name="user_list">
+        <property name="geometry">
+          <rect>
+            <x>10</x>
+            <y>220</y>
+            <width>380</width>
+            <height>70</height>
+          </rect>
+        </property>
+      </widget>
+    </widget>
+  </widget>
+  <resources/>
+  <connections/>
+</ui>
