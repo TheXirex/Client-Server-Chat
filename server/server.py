@@ -79,7 +79,7 @@ class ServerWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        ui_file = QFile("serverwindow.ui")
+        ui_file = QFile("server.ui")
         ui_file.open(QFile.ReadOnly)
         loadUi(ui_file, self)
         ui_file.close()
@@ -96,5 +96,9 @@ if __name__ == "__main__":
     window = ServerWindow()
     window.show()
 
+    server_thread = ServerThread()
+    server_thread.messageReceived.connect(window.display_message)
+    server_thread.usersUpdated.connect(window.update_user_list)
+    server_thread.start()
 
     app.exec_()
