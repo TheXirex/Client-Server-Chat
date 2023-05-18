@@ -5,19 +5,27 @@ from socket import socket
 
 from PyQt5 import QtCore
 from PyQt5 import uic
-from PyQt5.QtWidgets import QMainWindow, QPushButton, QTextEdit, QInputDialog, QLabel, QVBoxLayout, \
+from PyQt5.QtWidgets import QMainWindow, QPushButton, QTextEdit, QLabel, QVBoxLayout, \
     QScrollArea, QWidget, QMessageBox, QApplication
 
-from connection import ListenThread
+from PyQt5.QtCore import QFile
+from PyQt5.uic import loadUi
 
-ADDRESS = 'localhost'
-PORT = 9000
+from connection import ListenThread
+from input_nickname import CustomInputDialog
+
+ADDRESS = "localhost"
+PORT = 1000
 MESSAGES = dict()
 
-class ClientWindow(QMainWindow):
+class UI(QMainWindow):
     def __init__(self):
-        super(ClientWindow, self).__init__()
-        uic.loadUi("client.ui", self)
+        super(UI, self).__init__()
+
+        ui_file = QFile("client.ui")
+        ui_file.open(QFile.ReadOnly)
+        loadUi(ui_file, self)
+        ui_file.close()
 
         self.send_button = self.findChild(QPushButton, "send_button")
         self.send_button.clicked.connect(self.SendButton)
@@ -82,11 +90,20 @@ class ClientWindow(QMainWindow):
             MESSAGES[data['message']]['button'].setStyleSheet('background: rgb(255,255,255);')
 
     def inputNick(self):
-        self.nick, ok = QInputDialog.getText(self, 'Nickname',
-                                             'Enter your nickname:')
-        if ok:
-            self.ServerSend("nick", message=self.nick)
-            self.nickname.setText(f"Your nickname: {self.nick}")
+        while True:
+            dialog = CustomInputDialog(self)
+            ok = dialog.exec_()
+            if ok:
+                self.nick = dialog.line_edit.text().strip()
+                if self.nick:
+                    self.ServerSend("nick", message=self.nick)
+                    self.nickname.setText(f"Your nickname: {self.nick}")
+                    break
+                else:
+                    QMessageBox.critical(self, 'Error', 'Empty name. Please enter a nickname.')
+            else:
+                self.closeEvent()
+                break
     
     
     def SendButton(self):
@@ -145,8 +162,8 @@ class ClientWindow(QMainWindow):
         self.sendto.clear()
         return button
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = QApplication(sys.argv)
-    UIWindow = ClientWindow()
+    UIWindow = UI()
     app.exec()
+    

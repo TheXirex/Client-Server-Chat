@@ -5,8 +5,8 @@ from PyQt5.QtCore import QThread, pyqtSignal, QFile
 from PyQt5.uic import loadUi
 
 USERS = {}
-ADDRESS = "localhost"
-PORT = 1404
+ADDRESS = "0.0.0.0"
+PORT = 1000
 
 class ServerThread(QThread):
 
@@ -73,6 +73,9 @@ class ServerThread(QThread):
         print("Server started")
         async with server:
             await server.serve_forever()
+
+    def run(self):
+        asyncio.run(self.run_server())
 
 
 class ServerWindow(QMainWindow):
