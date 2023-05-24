@@ -6,7 +6,7 @@ from PyQt5.uic import loadUi
 
 USERS = {}
 ADDRESS = "0.0.0.0"
-PORT = 1000
+PORT = 1404
 
 class ServerThread(QThread):
 

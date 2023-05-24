@@ -13,9 +13,10 @@ from PyQt5.uic import loadUi
 
 from connection import ListenThread
 from input_nickname import CustomInputDialog
+from config import ServerInputDialog
 
-ADDRESS = "localhost"
-PORT = 1000
+ADDRESS = ''
+PORT = 0
 MESSAGES = dict()
 
 class UI(QMainWindow):
@@ -42,7 +43,14 @@ class UI(QMainWindow):
         self.sendto = self.findChild(QTextEdit, "send_to")
         self.sendto.installEventFilter(self)
 
+        #style_file = QtCore.QFile('style.css')
+        #style_file.open(QtCore.QFile.ReadOnly | QtCore.QFile.Text)
+        #stream = QtCore.QTextStream(style_file)
+        #stylesheet = stream.readAll()
+        #self.setStyleSheet(stylesheet)
+
         self.show()
+        self.inputServer()
 
         self.Connection = socket()
         self.Connection.connect((ADDRESS, PORT))
@@ -89,6 +97,28 @@ class UI(QMainWindow):
             }
             MESSAGES[data['message']]['button'].setStyleSheet('background: rgb(255,255,255);')
 
+    def inputServer(self):
+        while True:
+            dialog = ServerInputDialog(self)
+            ok = dialog.exec_()
+            if ok:
+                server_address = dialog.line_edit_address.text().strip()
+                server_port = dialog.line_edit_port.text().strip()
+                if server_address and server_port:
+                    if server_port.isdigit():
+                        global ADDRESS, PORT
+                        ADDRESS = server_address
+                        PORT = int(server_port)
+                        break
+                    else:
+                        QMessageBox.critical(self, 'Error', 'Invalid port number. Please enter a valid port.')
+                else:
+                    QMessageBox.critical(self, 'Error', 'Empty server address or port. Please enter server details.')
+            else:
+                self.closeEvent(None)
+                break
+
+
     def inputNick(self):
         while True:
             dialog = CustomInputDialog(self)
@@ -122,9 +152,9 @@ class UI(QMainWindow):
 
         self.Connection.send(json.dumps(dict_send).encode())
 
-    def closeEvent(self, event) -> None:
+    def closeEvent(self, event):
         self.ServerSend("exit")
-        time.sleep(1000)
+        time.sleep(1)
         self.Connection.close()
         super().closeEvent(event)
 
