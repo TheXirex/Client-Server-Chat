@@ -39,15 +39,15 @@ class UI(QMainWindow):
         self.nickname = self.findChild(QLabel, "nick_label")
 
         self.Users = self.findChild(QScrollArea, "UsersMessages")
-
+        
         self.sendto = self.findChild(QTextEdit, "send_to")
         self.sendto.installEventFilter(self)
 
-        #style_file = QtCore.QFile('style.css')
-        #style_file.open(QtCore.QFile.ReadOnly | QtCore.QFile.Text)
-        #stream = QtCore.QTextStream(style_file)
-        #stylesheet = stream.readAll()
-        #self.setStyleSheet(stylesheet)
+        style_file = QtCore.QFile('client.css')
+        style_file.open(QtCore.QFile.ReadOnly | QtCore.QFile.Text)
+        stream = QtCore.QTextStream(style_file)
+        stylesheet = stream.readAll()
+        self.setStyleSheet(stylesheet)
 
         self.show()
         self.inputServer()

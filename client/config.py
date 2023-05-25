@@ -24,7 +24,7 @@ class ServerInputDialog(QDialog):
         stream = QtCore.QTextStream(style_file)
         stylesheet = stream.readAll()
         self.setStyleSheet(stylesheet)
-        self.setFixedSize(260, 160)
+        self.setFixedSize(280, 160)
         
         # Creating layouts and adding elements
         layout = QVBoxLayout()
