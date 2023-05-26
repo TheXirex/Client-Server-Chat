@@ -5,13 +5,14 @@ from PyQt5.QtCore import QThread, pyqtSignal, QFile
 from PyQt5.uic import loadUi
 
 USERS = {}
-ADDRESS = "0.0.0.0"
+ADDRESS = "localhost"
 PORT = 1404
 
 class ServerThread(QThread):
 
     messageReceived = pyqtSignal(str)
     usersUpdated = pyqtSignal(list)
+    serverStarted = pyqtSignal(str, int)
 
     async def handle_client(self, reader, writer):
         while True:
@@ -70,6 +71,7 @@ class ServerThread(QThread):
 
     async def run_server(self):
         server = await asyncio.start_server(self.handle_client, ADDRESS, PORT)
+        self.serverStarted.emit(ADDRESS, PORT)  # Emit the signal with address and port
         print("Server started")
         async with server:
             await server.serve_forever()
@@ -93,6 +95,8 @@ class ServerWindow(QMainWindow):
     def update_user_list(self, users):
         self.user_list.clear()
         self.user_list.addItems(users)
+    def set_server_info(self, address, port):
+        self.address_port_field.setText(f"Address: {address}, Port: {port}")
 
 if __name__ == "__main__":
     app = QApplication([])
@@ -102,6 +106,7 @@ if __name__ == "__main__":
     server_thread = ServerThread()
     server_thread.messageReceived.connect(window.display_message)
     server_thread.usersUpdated.connect(window.update_user_list)
+    server_thread.serverStarted.connect(window.set_server_info)  # Connect the signal
     server_thread.start()
 
     app.exec_()
