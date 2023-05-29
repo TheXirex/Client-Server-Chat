@@ -13,11 +13,7 @@ class ServerInputDialog(QDialog):
         self.label_port = QLabel("Server Port:")
         self.line_edit_port = QLineEdit()
         self.button_ok = QPushButton("OK")
-        
-        self.line_edit_address.setPlaceholderText("localhost")
 
-        # Установка плейсхолдера для порта
-        self.line_edit_port.setPlaceholderText("0000")
         # Set window style
         style_file = QtCore.QFile('config.css')
         style_file.open(QtCore.QFile.ReadOnly | QtCore.QFile.Text)
@@ -25,6 +21,9 @@ class ServerInputDialog(QDialog):
         stylesheet = stream.readAll()
         self.setStyleSheet(stylesheet)
         self.setFixedSize(280, 160)
+
+        self.line_edit_address.setPlaceholderText("localhost")
+        self.line_edit_port.setPlaceholderText("0000")
         
         # Creating layouts and adding elements
         layout = QVBoxLayout()

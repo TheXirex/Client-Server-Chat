@@ -4,10 +4,10 @@ import sys
 from socket import socket
 
 from PyQt5 import QtCore
-from PyQt5 import uic
 from PyQt5.QtWidgets import QMainWindow, QPushButton, QTextEdit, QLabel, QVBoxLayout, \
-    QScrollArea, QWidget, QMessageBox, QApplication
+    QScrollArea, QWidget, QMessageBox, QApplication, QDesktopWidget
 
+from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QFile
 from PyQt5.uic import loadUi
 
@@ -48,8 +48,15 @@ class UI(QMainWindow):
         stream = QtCore.QTextStream(style_file)
         stylesheet = stream.readAll()
         self.setStyleSheet(stylesheet)
+        self.setWindowIcon(QIcon('chat.png'))
 
         self.show()
+
+        window_geometry = self.frameGeometry()
+        center_point = QDesktopWidget().availableGeometry().center()
+        window_geometry.moveCenter(center_point)
+        self.move(window_geometry.topLeft())
+
         self.inputServer()
 
         self.Connection = socket()
@@ -68,22 +75,26 @@ class UI(QMainWindow):
 
     def ServerResponse(self, data: dict):
         if data["code"] == "receive":
-            t = MESSAGES.get(data["from"])
-            if t is None:
-                MESSAGES[data['from']] = {
-                    'button': self.addUser(data['from']),
-                    'message': [["user", data['message']]],
+            sender = data['from']
+            message = data['message']
+            if sender in MESSAGES:
+                MESSAGES[sender]['message'].append(["user", message])
+                if self.user_choose == sender:
+                    self.print_text.append(message)
+                    self.print_text.setAlignment(QtCore.Qt.AlignRight)
+                else:
+                    MESSAGES[sender]['button'].setStyleSheet('background: rgb(255,0,0);')
+            else:
+                MESSAGES[sender] = {
+                    'button': self.addUser(sender),
+                    'message': [["user", message]],
                     'read': False
                 }
-                MESSAGES[data['from']]['button'].setStyleSheet('background: rgb(255,0,0);')
-            else:
-                MESSAGES[data["from"]]['message'].append(["user", data['message']])
-
-            if data["from"] == self.user_choose:
-                self.print_text.append(data['message'])
-                self.print_text.setAlignment(QtCore.Qt.AlignRight)
-            else:
-                MESSAGES[data['from']]['button'].setStyleSheet('background: rgb(255,0,0);')
+                if self.user_choose != sender:
+                    MESSAGES[sender]['button'].setStyleSheet('background: rgb(255,0,0);')
+                else:
+                    self.print_text.append(message)
+                    self.print_text.setAlignment(QtCore.Qt.AlignRight)        
 
         if data["code"] == "error":
             QMessageBox.critical(self, "Error", data['message'], QMessageBox.Ok)
@@ -118,7 +129,6 @@ class UI(QMainWindow):
                 self.closeEvent(None)
                 break
 
-
     def inputNick(self):
         while True:
             dialog = CustomInputDialog(self)
@@ -134,7 +144,6 @@ class UI(QMainWindow):
             else:
                 self.closeEvent()
                 break
-    
     
     def SendButton(self):
         if self.user_choose != "":
@@ -166,7 +175,9 @@ class UI(QMainWindow):
         if event.type() == QtCore.QEvent.KeyPress and obj is self.sendto:
             if event.key() == QtCore.Qt.Key_Return and self.sendto.hasFocus():
                 self.ServerSend("find", message=self.sendto.toPlainText())
+                self.sendto.clear()
         return super().eventFilter(obj, event)
+
 
     def UserProcess(self, name: str):
         self.user_choose = name
@@ -181,7 +192,12 @@ class UI(QMainWindow):
                     self.print_text.append(i[1])
                     self.print_text.setAlignment(QtCore.Qt.AlignRight)
 
-    def addUser(self, name: str) -> QPushButton:
+    def addUser(self, name: str):
+        if name in MESSAGES:
+            QMessageBox.information(self, "User Exists", "This user already exists.")
+            self.sendto.clear()
+            return MESSAGES[name]['button']
+
         button = QPushButton(self)
         button.setText(name)
         button.clicked.connect(lambda _, name=name: self.UserProcess(name))
@@ -190,6 +206,14 @@ class UI(QMainWindow):
         self.widget.setLayout(self.vbox)
         self.Users.setWidget(self.widget)
         self.sendto.clear()
+
+        MESSAGES[name] = {
+            'button': button,
+            'message': [],
+            'read': True
+        }
+        MESSAGES[name]['button'].setStyleSheet('background: rgb(255,255,255);')
+
         return button
 
 if __name__ == "__main__":
