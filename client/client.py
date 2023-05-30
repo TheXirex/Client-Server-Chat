@@ -8,15 +8,15 @@ from PyQt5.QtWidgets import QMainWindow, QPushButton, QTextEdit, QLabel, QVBoxLa
     QScrollArea, QWidget, QMessageBox, QApplication, QDesktopWidget
 
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import QFile
+from PyQt5.QtCore import QFile, Qt
 from PyQt5.uic import loadUi
 
 from connection import ListenThread
 from input_nickname import CustomInputDialog
 from config import ServerInputDialog
 
-ADDRESS = 'localhost'
-PORT = 1404
+ADDRESS = ''
+PORT = 0
 MESSAGES = dict()
 
 class UI(QMainWindow):
@@ -49,6 +49,10 @@ class UI(QMainWindow):
         stylesheet = stream.readAll()
         self.setStyleSheet(stylesheet)
         self.setWindowIcon(QIcon('chat.png'))
+        
+        self.setWindowFlag(Qt.WindowMaximizeButtonHint, False)
+
+        self.setFixedSize(self.width(), self.height())
 
         self.show()
 
@@ -57,7 +61,7 @@ class UI(QMainWindow):
         window_geometry.moveCenter(center_point)
         self.move(window_geometry.topLeft())
 
-        # self.inputServer()
+        self.inputServer()
 
         self.Connection = socket()
         self.Connection.connect((ADDRESS, PORT))
@@ -93,7 +97,6 @@ class UI(QMainWindow):
                     MESSAGES[sender]['button'].setStyleSheet('background: rgb(255,0,0);')
                 else:
                     self.print_text.append(message)
-    
 
         if data["code"] == "error":
             QMessageBox.critical(self, "Error", data['message'], QMessageBox.Ok)
@@ -107,26 +110,26 @@ class UI(QMainWindow):
             }
             MESSAGES[data['message']]['button'].setStyleSheet('background: rgb(255,255,255);')
 
-    # def inputServer(self):
-    #     while True:
-    #         dialog = ServerInputDialog(self)
-    #         ok = dialog.exec_()
-    #         if ok:
-    #             server_address = dialog.line_edit_address.text().strip()
-    #             server_port = dialog.line_edit_port.text().strip()
-    #             if server_address and server_port:
-    #                 if server_port.isdigit():
-    #                     global ADDRESS, PORT
-    #                     ADDRESS = server_address
-    #                     PORT = int(server_port)
-    #                     break
-    #                 else:
-    #                     QMessageBox.critical(self, 'Error', 'Invalid port number. Please enter a valid port.')
-    #             else:
-    #                 QMessageBox.critical(self, 'Error', 'Empty server address or port. Please enter server details.')
-    #         else:
-    #             self.closeEvent(None)
-    #             break
+    def inputServer(self):
+        while True:
+            dialog = ServerInputDialog(self)
+            ok = dialog.exec_()
+            if ok:
+                server_address = dialog.line_edit_address.text().strip()
+                server_port = dialog.line_edit_port.text().strip()
+                if server_address and server_port:
+                    if server_port.isdigit():
+                        global ADDRESS, PORT
+                        ADDRESS = server_address
+                        PORT = int(server_port)
+                        break
+                    else:
+                        QMessageBox.critical(self, 'Error', 'Invalid port number. Please enter a valid port.')
+                else:
+                    QMessageBox.critical(self, 'Error', 'Empty server address or port. Please enter server details.')
+            else:
+                self.closeEvent(None)
+                break
 
     def inputNick(self):
         while True:
@@ -147,12 +150,14 @@ class UI(QMainWindow):
     def SendButton(self):
         message = self.send_text.toPlainText().strip()
         if self.user_choose != "" and message:
-            full_message = f"{self.nick}: {message}"  # Добавляем имя отправителя
+            full_message = f"{self.nick}: {message}"
             self.ServerSend("send", self.user_choose, full_message)
-            MESSAGES[self.user_choose]['message'].append(["me", full_message])
-            self.print_text.append(full_message)
+            if self.user_choose in MESSAGES:
+                user_button = MESSAGES[self.user_choose]['button']
+                if user_button is not None:
+                    MESSAGES[self.user_choose]['message'].append(["me", full_message])
+                    self.print_text.append(full_message)
             self.send_text.clear()
-
 
     def ServerSend(self, code: str, to: str = "server", message: str = ""):
         dict_send = {"code": code,
@@ -179,7 +184,6 @@ class UI(QMainWindow):
                 self.sendto.clear()
         return super().eventFilter(obj, event)
 
-
     def UserProcess(self, name: str):
         self.user_choose = name
         self.print_text.clear()
@@ -190,13 +194,14 @@ class UI(QMainWindow):
 
 
     def addUser(self, name: str):
+    
         if name in MESSAGES:
             QMessageBox.information(self, "User Exists", "This user already exists.")
             self.sendto.clear()
             return MESSAGES[name]['button']
-
+    
         button = QPushButton(self)
-        button.setText(name)
+        button.setText(name.split(":")[0])
         button.clicked.connect(lambda _, name=name: self.UserProcess(name))
 
         self.vbox.addWidget(button)
