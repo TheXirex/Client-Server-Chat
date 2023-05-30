@@ -15,8 +15,8 @@ from connection import ListenThread
 from input_nickname import CustomInputDialog
 from config import ServerInputDialog
 
-ADDRESS = ''
-PORT = 0
+ADDRESS = 'localhost'
+PORT = 1404
 MESSAGES = dict()
 
 class UI(QMainWindow):
@@ -57,7 +57,7 @@ class UI(QMainWindow):
         window_geometry.moveCenter(center_point)
         self.move(window_geometry.topLeft())
 
-        self.inputServer()
+        # self.inputServer()
 
         self.Connection = socket()
         self.Connection.connect((ADDRESS, PORT))
@@ -81,7 +81,6 @@ class UI(QMainWindow):
                 MESSAGES[sender]['message'].append(["user", message])
                 if self.user_choose == sender:
                     self.print_text.append(message)
-                    self.print_text.setAlignment(QtCore.Qt.AlignRight)
                 else:
                     MESSAGES[sender]['button'].setStyleSheet('background: rgb(255,0,0);')
             else:
@@ -94,7 +93,7 @@ class UI(QMainWindow):
                     MESSAGES[sender]['button'].setStyleSheet('background: rgb(255,0,0);')
                 else:
                     self.print_text.append(message)
-                    self.print_text.setAlignment(QtCore.Qt.AlignRight)        
+    
 
         if data["code"] == "error":
             QMessageBox.critical(self, "Error", data['message'], QMessageBox.Ok)
@@ -108,26 +107,26 @@ class UI(QMainWindow):
             }
             MESSAGES[data['message']]['button'].setStyleSheet('background: rgb(255,255,255);')
 
-    def inputServer(self):
-        while True:
-            dialog = ServerInputDialog(self)
-            ok = dialog.exec_()
-            if ok:
-                server_address = dialog.line_edit_address.text().strip()
-                server_port = dialog.line_edit_port.text().strip()
-                if server_address and server_port:
-                    if server_port.isdigit():
-                        global ADDRESS, PORT
-                        ADDRESS = server_address
-                        PORT = int(server_port)
-                        break
-                    else:
-                        QMessageBox.critical(self, 'Error', 'Invalid port number. Please enter a valid port.')
-                else:
-                    QMessageBox.critical(self, 'Error', 'Empty server address or port. Please enter server details.')
-            else:
-                self.closeEvent(None)
-                break
+    # def inputServer(self):
+    #     while True:
+    #         dialog = ServerInputDialog(self)
+    #         ok = dialog.exec_()
+    #         if ok:
+    #             server_address = dialog.line_edit_address.text().strip()
+    #             server_port = dialog.line_edit_port.text().strip()
+    #             if server_address and server_port:
+    #                 if server_port.isdigit():
+    #                     global ADDRESS, PORT
+    #                     ADDRESS = server_address
+    #                     PORT = int(server_port)
+    #                     break
+    #                 else:
+    #                     QMessageBox.critical(self, 'Error', 'Invalid port number. Please enter a valid port.')
+    #             else:
+    #                 QMessageBox.critical(self, 'Error', 'Empty server address or port. Please enter server details.')
+    #         else:
+    #             self.closeEvent(None)
+    #             break
 
     def inputNick(self):
         while True:
@@ -146,12 +145,14 @@ class UI(QMainWindow):
                 break
     
     def SendButton(self):
-        if self.user_choose != "":
-            self.ServerSend("send", self.user_choose, self.send_text.toPlainText())
-            MESSAGES[self.user_choose]['message'].append(["me", self.send_text.toPlainText()])
-            self.print_text.append(self.send_text.toPlainText())
-            self.print_text.setAlignment(QtCore.Qt.AlignLeft)
+        message = self.send_text.toPlainText().strip()
+        if self.user_choose != "" and message:
+            full_message = f"{self.nick}: {message}"  # Добавляем имя отправителя
+            self.ServerSend("send", self.user_choose, full_message)
+            MESSAGES[self.user_choose]['message'].append(["me", full_message])
+            self.print_text.append(full_message)
             self.send_text.clear()
+
 
     def ServerSend(self, code: str, to: str = "server", message: str = ""):
         dict_send = {"code": code,
@@ -185,12 +186,8 @@ class UI(QMainWindow):
         MESSAGES[name]['button'].setStyleSheet('background: rgb(255,255,255);')
         if len(MESSAGES[name]['message']) != 0:
             for i in MESSAGES[name]['message']:
-                if i[0] == "me":
-                    self.print_text.append(i[1])
-                    self.print_text.setAlignment(QtCore.Qt.AlignLeft)
-                else:
-                    self.print_text.append(i[1])
-                    self.print_text.setAlignment(QtCore.Qt.AlignRight)
+                self.print_text.append(i[1])
+
 
     def addUser(self, name: str):
         if name in MESSAGES:

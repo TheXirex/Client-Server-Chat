@@ -5,7 +5,7 @@ from PyQt5.QtCore import QThread, pyqtSignal, QFile
 from PyQt5.uic import loadUi
 
 USERS = {}
-ADDRESS = "localhost"
+ADDRESS = "127.0.0.1"
 PORT = 1404
 
 class ServerThread(QThread):
