@@ -1,8 +1,11 @@
 import asyncio
 import json
+from PyQt5 import QtCore
 from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5.QtCore import QThread, pyqtSignal, QFile
 from PyQt5.uic import loadUi
+
+from PyQt5.QtGui import QIcon
 
 USERS = {}
 ADDRESS = "127.0.0.1"
@@ -89,6 +92,20 @@ class ServerWindow(QMainWindow):
         loadUi(ui_file, self)
         ui_file.close()
 
+        self.text_edit.setReadOnly(True)
+
+        self.setWindowIcon(QIcon('chat.png'))
+        
+        self.setWindowFlag(QtCore.Qt.WindowMaximizeButtonHint, False)
+
+        style_file = QtCore.QFile('server.css')
+        style_file.open(QtCore.QFile.ReadOnly | QtCore.QFile.Text)
+        stream = QtCore.QTextStream(style_file)
+        stylesheet = stream.readAll()
+        self.setStyleSheet(stylesheet)
+
+        self.setFixedSize(self.width(), self.height())
+
     def display_message(self, message):
         self.text_edit.append(message)
 
@@ -96,7 +113,7 @@ class ServerWindow(QMainWindow):
         self.user_list.clear()
         self.user_list.addItems(users)
     def set_server_info(self, address, port):
-        self.address_port_field.setText(f"Address: {address}, Port: {port}")
+        self.address_port_field.setText(f" Address: {address} {' '*33} Port: {port} ")
 
 if __name__ == "__main__":
     app = QApplication([])
