@@ -1,11 +1,12 @@
 import asyncio
 import json
-from PyQt5 import QtCore
-from PyQt5.QtWidgets import QApplication, QMainWindow
-from PyQt5.QtCore import QThread, pyqtSignal, QFile
+import sys
+from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QMessageBox
+from PyQt5.QtCore import QThread, pyqtSignal, QFile, Qt, QFile, QTextStream
 from PyQt5.uic import loadUi
 
 from PyQt5.QtGui import QIcon
+from config import ServerInputDialog
 
 USERS = {}
 ADDRESS = "127.0.0.1"
@@ -63,9 +64,7 @@ class ServerThread(QThread):
                     "message": data["message"]
                 }
                 await self.send(dict_send)
-                self.messageReceived.emit(
-                    f'{data["from"]} SEND MESSAGE TO {data["to"]}'
-                )
+                self.messageReceived.emit(f'{data["from"]} SEND MESSAGE TO {data["to"]}')
 
     async def send(self, data: dict) -> None:
         receiver = USERS[data["to"]][1]
@@ -74,7 +73,7 @@ class ServerThread(QThread):
 
     async def run_server(self):
         server = await asyncio.start_server(self.handle_client, ADDRESS, PORT)
-        self.serverStarted.emit(ADDRESS, PORT)  # Emit the signal with address and port
+        self.serverStarted.emit(ADDRESS, PORT)
         print("Server started")
         async with server:
             await server.serve_forever()
@@ -96,11 +95,11 @@ class ServerWindow(QMainWindow):
 
         self.setWindowIcon(QIcon('chat.png'))
         
-        self.setWindowFlag(QtCore.Qt.WindowMaximizeButtonHint, False)
+        self.setWindowFlag(Qt.WindowMaximizeButtonHint, False)
 
-        style_file = QtCore.QFile('server.css')
-        style_file.open(QtCore.QFile.ReadOnly | QtCore.QFile.Text)
-        stream = QtCore.QTextStream(style_file)
+        style_file = QFile('server.css')
+        style_file.open(QFile.ReadOnly | QFile.Text)
+        stream = QTextStream(style_file)
         stylesheet = stream.readAll()
         self.setStyleSheet(stylesheet)
 
@@ -112,18 +111,43 @@ class ServerWindow(QMainWindow):
     def update_user_list(self, users):
         self.user_list.clear()
         self.user_list.addItems(users)
+    
     def set_server_info(self, address, port):
-        self.address_port_field.setText(f" Address: {address} {' '*33} Port: {port} ")
+        self.address_port_field.setText(f" Address: {address} {' '*32} Port: {port} ")
+
+def inputServer():
+        while True:
+            dialog = ServerInputDialog()
+            ok = dialog.exec_()
+            if ok:
+                server_port = dialog.line_edit_port.text().strip()
+                if server_port:
+                    if server_port.isdigit():
+                        global PORT
+                        PORT = int(server_port)
+                        break
+                    else:
+                        QMessageBox.critical('Error', 'Invalid port number. Please enter a valid port.')
+                else:
+                    QMessageBox.critical('Error', 'Empty port. Please enter server details.')
+            else:
+                sys.exit()
 
 if __name__ == "__main__":
+
     app = QApplication([])
+
+    inputServer()
+    
     window = ServerWindow()
     window.show()
 
     server_thread = ServerThread()
     server_thread.messageReceived.connect(window.display_message)
     server_thread.usersUpdated.connect(window.update_user_list)
-    server_thread.serverStarted.connect(window.set_server_info)  # Connect the signal
+    server_thread.serverStarted.connect(window.set_server_info)
+
+    
     server_thread.start()
 
     app.exec_()
